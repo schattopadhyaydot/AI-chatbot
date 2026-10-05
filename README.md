@@ -1,1 +1,82 @@
 # AI-chatbot
+import os
+import ssl
+from smolagents import CodeAgent, WebSearchTool
+from smolagents.models import InferenceClientModel
+
+# -------------------------------------------------------------------
+# 1. Advanced Network & Environment Fixes
+# -------------------------------------------------------------------
+# Prevents strict local security handshake blocks
+ssl._create_default_https_context = ssl._create_unverified_context 
+
+# Wipe potential environmental proxy loops causing DuckDuckGo blockades
+os.environ['HTTP_PROXY'] = ''
+os.environ['HTTPS_PROXY'] = ''
+print("✅ System environment and network variables successfully reset.")
+
+# -------------------------------------------------------------------
+# 2. Authentication & Model Setup
+# -------------------------------------------------------------------
+HF_ACCESS_TOKEN = "" 
+os.environ["HF_TOKEN"] = HF_ACCESS_TOKEN
+
+# We utilize Qwen2.5-Coder-32B for its vast internal knowledge base
+model = InferenceClientModel(
+    model_id="Qwen/Qwen2.5-Coder-32B-Instruct", 
+    token=HF_ACCESS_TOKEN
+)
+
+# -------------------------------------------------------------------
+# 3. Initialize Agent Components
+# -------------------------------------------------------------------
+search_tool = WebSearchTool()
+
+agent = CodeAgent(
+    tools=[search_tool], 
+    model=model, 
+    additional_authorized_imports=["math", "collections", "datetime", "re"]
+)
+print("🚀 AI Agent successfully initialized.")
+
+# -------------------------------------------------------------------
+# 4. Interactive User Loop with Dynamic Safeguard System
+# -------------------------------------------------------------------
+print("\n=== smolagents Smart Hybrid Assistant ===")
+print("Ask any question (e.g., 'Who invented the electric bulb?' or 'Who won the 2022 World Cup?').")
+print("Type 'exit' to quit.\n")
+
+while True:
+    user_question = input("Enter your question: ").strip()
+    
+    if not user_question or user_question.lower() in ['quit', 'exit']:
+        print("Goodbye!")
+        break
+        
+    print(f"\n[Agent status]: Analyzing request...")
+    
+    # SYSTEM PROMPT INJECTION: 
+    # Instructs the agent to prioritize internal knowledge for historical facts,
+    # and safely handle search exceptions if the internet fails.
+    optimized_challenge = (
+        f"User Request: {user_question}\n\n"
+        "Instructions for Agent:\n"
+        "1. If this is a historical fact, basic calculation, or common knowledge, you can directly answer it "
+        "using your internal knowledge structure via your thought block.\n"
+        "2. If you choose to execute `web_search()`, wrap it inside a Python try/except block. "
+        "If `web_search()` raises an exception (e.g. No results found/Rate Limit), catch it in your python "
+        "runtime execution and immediately fall back to your own extensive background knowledge base to answer the user."
+        
+    )
+    
+    try:
+        # Pass the robust instruction wrapper to the running agent loop
+        response = agent.run(optimized_challenge)
+        
+        print("\n--- Final Agent Answer ---")
+        print(response)
+        print("═" * 60 + "\n")
+        
+    except Exception as e:
+        print(f"\n⚠️ The agent engine encountered a critical processing loop error: {e}")
+        print("Attempting to recover system console...\n")
